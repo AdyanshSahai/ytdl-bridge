@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root { color-scheme: dark; }
+    html { background: rgb(10, 6, 13); }
+
+    body {
+      width: 300px;
+      background: rgb(10, 6, 13);
+      min-height: 100%;
+      color: rgb(236, 245, 255);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      padding: 14px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header svg { color: rgb(188, 139, 202); flex-shrink: 0; }
+    .title { font-size: 13px; font-weight: 600; letter-spacing: 0.3px; }
+    .shortcut-hint {
+      font-size: 9px;
+      color: rgb(89, 90, 98);
+      font-family: monospace;
+      border: 1px solid rgb(46, 33, 51);
+      border-radius: 4px;
+      padding: 2px 5px;
+    }
+
+    .url-box {
+      background: rgb(14, 5, 33);
+      border: 1px solid rgb(37, 26, 41);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      word-break: break-all;
+      font-size: 11px;
+      font-family: monospace;
+      color: rgb(146, 149, 158);
+      max-height: 52px;
+      overflow: hidden;
+    }
+
+    .mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgb(24, 13, 43);
+      border: 1px solid rgb(46, 33, 51);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .mode-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .mode-badge.audio .dot { background: rgb(188, 139, 202); }
+    .mode-badge.video .dot { background: rgb(255, 170, 255); }
+    .mode-badge.none  .dot { background: rgb(78, 78, 86); }
+
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgb(24, 17, 28);
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: rgb(161, 119, 174);
+      margin-bottom: 14px;
+      margin-left: 6px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: rgb(135, 99, 145);
+      margin-bottom: 6px;
+    }
+
+    .btn-row { display: flex; gap: 8px; }
+    .btn {
+      flex: 1;
+      padding: 9px 0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.15s, transform 0.1s, border-color 0.15s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { color: rgb(78, 78, 86); cursor: default; pointer-events: none; }
+
+    .btn-audio, .btn-video {
+      background: rgb(24, 13, 43);
+      color: rgb(236, 245, 255);
+      border: 1px solid rgb(63, 46, 70);
+    }
+    .btn-audio:hover, .btn-video:hover { background: rgb(37, 20, 66); border-color: rgb(188, 139, 202); }
+
+    /* chosen mode: deep violet gradient + lilac border + soft glow.
+       deliberately darker/richer than the solid-lilac .selected state used
+       by the where/how options, so the two read as different things. */
+    .btn-audio.active, .btn-video.active {
+      background: linear-gradient(180deg, rgb(78, 40, 132) 0%, rgb(48, 22, 88) 100%);
+      border-color: rgb(188, 139, 202);
+      box-shadow:
+        0 0 0 1px rgb(72, 47, 84),
+        0 4px 16px rgb(41, 20, 66),
+        inset 0 1px 0 rgb(100, 66, 150);
+      color: #fff;
+    }
+    .btn-audio.active:hover, .btn-video.active:hover {
+      background: linear-gradient(180deg, rgb(88, 46, 146) 0%, rgb(54, 26, 98) 100%);
+    }
+    /* once one is chosen, quiet the other so the choice is obvious */
+    .btn-row.has-active .btn:not(.active) {
+      background: rgb(17, 9, 30);
+      border-color: rgb(46, 33, 51);
+      color: rgb(123, 126, 134);
+    }
+    .btn-row.has-active .btn:not(.active):hover {
+      background: rgb(37, 20, 66);
+      border-color: rgb(188, 139, 202);
+      color: rgb(236, 245, 255);
+    }
+
+    .popup-box {
+      background: rgb(14, 5, 33);
+      border: 1px solid rgb(54, 39, 60);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      display: none;
+    }
+    .popup-box.visible { display: block; }
+
+    .where-options, .how-options { display: flex; flex-direction: column; gap: 7px; }
+    .where-btn, .how-btn {
+      width: 100%;
+      padding: 8px 10px;
+      background: rgb(24, 13, 43);
+      border: 1px solid rgb(46, 33, 51);
+      border-radius: 6px;
+      color: rgb(236, 245, 255);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .where-btn:hover, .how-btn:hover { background: rgb(37, 20, 66); border-color: rgb(188, 139, 202); }
+    .where-btn.selected, .how-btn.selected {
+      background: rgb(188, 139, 202);
+      color: rgb(10, 6, 13);
+      border-color: rgb(188, 139, 202);
+    }
+
+    .folder-input-row, .count-input-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .folder-input, .count-input {
+      background: rgb(10, 6, 13);
+      border: 1px solid rgb(63, 46, 70);
+      border-radius: 5px;
+      color: rgb(236, 245, 255);
+      font-size: 12px;
+      padding: 7px 9px;
+      outline: none;
+    }
+    .folder-input { flex: 1; }
+    .count-input { width: 70px; }
+    .folder-input:focus, .count-input:focus { border-color: rgb(188, 139, 202); }
+    .folder-input::placeholder, .count-input::placeholder { color: rgb(78, 78, 86); }
+    .count-label { font-size: 11px; color: rgb(123, 126, 134); }
+
+    .btn-confirm {
+      width: 100%;
+      margin-top: 10px;
+      padding: 9px;
+      background: rgb(188, 139, 202);
+      color: rgb(10, 6, 13);
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-confirm:hover { background: rgb(208, 164, 221); }
+    .btn-confirm:active { transform: scale(0.97); }
+
+    .toast {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgb(188, 139, 202);
+      height: 16px;
+    }
+
+    .unsupported {
+      text-align: center;
+      color: rgb(100, 102, 110);
+      padding: 10px 0;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+      </svg>
+      <span class="title">YT Downloader</span>
+    </div>
+    <span class="shortcut-hint">Ctrl+Shift+Y</span>
+  </div>
+
+  <div class="url-box" id="urlBox">Detecting page...</div>
+
+  <div>
+    <span class="mode-badge none" id="modeBadge">
+      <span class="dot"></span>
+      <span id="modeLabel">Not a YouTube page</span>
+    </span>
+    <span class="type-badge" id="typeBadge" style="display:none"></span>
+  </div>
+
+  <div id="controls">
+    <div class="btn-row" id="btnRow">
+      <button class="btn btn-audio" id="btnAudio">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"></path>
+          <circle cx="6" cy="18" r="3"></circle>
+          <circle cx="18" cy="16" r="3"></circle>
+        </svg>
+        Audio
+      </button>
+      <button class="btn btn-video" id="btnVideo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+          <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"></path>
+        </svg>
+        Video
+      </button>
+    </div>
+
+    <!-- WHERE popup — now shown for EVERY download, single video included -->
+    <div class="popup-box" id="wherePopup">
+      <div class="section-label">Where to save?</div>
+      <div class="where-options">
+        <button class="where-btn selected" id="whereYtRips">📁 yt-rips (flat default)</button>
+        <button class="where-btn" id="whereAuto">🏷️ Auto-named</button>
+        <button class="where-btn" id="whereCustom">📂 Custom folder name</button>
+        <div class="folder-input-row" id="folderInputRow" style="display:none">
+          <input class="folder-input" id="folderInput" type="text" placeholder="e.g. tom-and-jerry" />
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW MANY popup — also always shown now. "Just this one" is first
+         and the default (its label switches video/song in popup.js). On a
+         single-video page, picking "Entire playlist" is silently treated as
+         just this video in popup.js's download() logic. -->
+    <div class="popup-box" id="howPopup">
+      <div class="section-label">How many?</div>
+      <div class="how-options">
+        <button class="how-btn selected" id="howOne">🎬 Just this video</button>
+        <button class="how-btn" id="howAll">⬇ Entire playlist</button>
+        <button class="how-btn" id="howCount">🔢 First X items</button>
+        <div class="count-input-row" id="countInputRow" style="display:none">
+          <input class="count-input" id="countInput" type="number" min="1" placeholder="100" />
+          <span class="count-label">items from start</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-confirm" id="btnConfirm" style="display:none">⬇ Download</button>
+  </div>
+
+  <div class="unsupported" id="unsupported" style="display:none">
+    Open a YouTube or YT Music page to download.
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

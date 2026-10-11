@@ -1,0 +1,6 @@
+*.bak
+__pycache__/
+*.pyc
+cookies*.txt
+.directory
+native/com.ytdlaudio.host.json
