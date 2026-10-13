@@ -11,8 +11,10 @@ One-click yt-dlp frontend for Brave/Chrome — a browser extension hands the pag
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Downloading](#downloading)
 - [Popup Options](#popup-options)
+- [Terminal Output](#terminal-output)
+- [Message Format](#message-format)
 - [Configuration](#configuration)
 - [Design Notes](#design-notes)
 - [Known Issues](#known-issues)
@@ -81,14 +83,19 @@ Optionally keep yt-dlp current — this checks the installed vs latest version a
 bash native/update.sh
 ```
 
-## Usage
+## Downloading
 
-- **Click the icon** (or `Ctrl+Shift+Y`) and pick Audio or Video.
-- **Single video** downloads immediately, no extra choices.
-- **Playlist or channel** (`?list=` URLs, or `/@handle/videos`, `/channel/...`, `/c/...`, `/user/...`) asks where to save and how many.
-- **Right-click the icon** for a quick Audio/Video download: full length, auto-named folder, no popups.
+Open a YouTube or YT Music page, then:
 
-Mode is picked from the site: `music.youtube.com` is audio, `youtube.com` is video.
+1. Click the extension icon (or press `Ctrl+Shift+Y`).
+2. Pick **Audio** or **Video**. The site decides which one is highlighted: `music.youtube.com` is audio, `youtube.com` is video.
+3. On a single video, the download starts immediately.
+4. On a playlist or channel (`?list=` URLs, or `/@handle/videos`, `/channel/...`, `/c/...`, `/user/...`), choose where to save and how many items, then confirm.
+5. A terminal opens and runs the job. A desktop notification fires when it finishes.
+
+Right-click the icon for a quick Audio/Video download: full length, auto-named folder, no popups.
+
+If the run is clean, the terminal closes itself. If anything goes wrong (yt-dlp exit code or `ERROR` line, lyrics failure, notification failure, nothing saved), it stays open so you can read it.
 
 ## Popup Options
 
@@ -109,6 +116,37 @@ How many:
 | First X items | the first X, in batches |
 
 On a bare playlist/channel page with nothing playing, "Just this video" is hidden and the default becomes the whole thing. On YT Music, where playing a song from a playlist page leaves the URL on `/playlist?list=...`, the popup reads the real playing video ID from the player.
+
+## Terminal Output
+
+yt-dlp runs quiet and prints one line before and after each item, with a progress line that rewrites itself in place in between:
+
+```
+[3/42] Downloading: Song Title
+    34.2%  12.1MiB/s  eta 00:08
+[3/42] Saved: Song Title
+```
+
+`[index/count]` shows `-` when yt-dlp doesn't know the playlist size. Titles are cut at 60 characters.
+
+## Message Format
+
+The extension sends one JSON message per job to the native host:
+
+```json
+{
+  "url": "https://www.youtube.com/watch?v=...",
+  "mode": "audio",
+  "dest": "/path/to/Music/yt-rips",
+  "limit": null,
+  "forceSingle": true
+}
+```
+
+- `mode` — `audio` (Opus) or `video` (MKV)
+- `dest` — output folder. A trailing `/__AUTO__` becomes yt-dlp's `%(playlist_title,channel,uploader|Misc)s` template, so each playlist or channel gets its own folder
+- `limit` — integer or `null`, for "first X items"
+- `forceSingle` — `true` adds `--no-playlist`, so a `watch?v=..&list=..` URL downloads only that video
 
 ## Configuration
 
@@ -154,7 +192,7 @@ The lyrics script is not in this repo yet. Audio mode expects it at `LYRICS_SCRI
 - Share the channel regex and path logic instead of duplicating it.
 - Add a screenshot or GIF of it in action.
 
-Feel free to open an issue or send a pull request.
+Feel free to contribute via forks and Pull Requests, or open an issue if something breaks.
 
 ## License
 
