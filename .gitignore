@@ -4,3 +4,4 @@ __pycache__/
 cookies*.txt
 .directory
 native/com.ytdlaudio.host.json
+config.local.ini

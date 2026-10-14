@@ -25,7 +25,7 @@ One-click yt-dlp frontend for Brave/Chrome — a browser extension hands the pag
 
 ```
 popup / right-click menu
-        │  chrome.runtime.sendNativeMessage({url, mode, dest, limit, forceSingle})
+        │  chrome.runtime.sendNativeMessage({url, mode, where, folder, limit, forceSingle})
         ▼
 native/host.py ── builds a bash script ──▶ terminal ──▶ yt-dlp, in batches
         │
@@ -53,7 +53,7 @@ This is a frontend for [yt-dlp](https://github.com/yt-dlp/yt-dlp), not a replace
 | notify-send or kdialog | for the finished notification |
 | mutagen + syncedlyrics | optional, for lyrics in audio mode: `pip install --user mutagen syncedlyrics` |
 
-yt-dlp reads your login cookies with `--cookies-from-browser brave`, so you need to be signed in to YouTube in Brave. For Chrome, change that argument in `native/host.py`.
+yt-dlp reads your YouTube login cookies from a browser, and that defaults to Brave. Using Chrome (or anything else)? Change `cookies_from` in [config.ini](config.ini). See [Configuration](#configuration).
 
 ## Installation
 
@@ -76,7 +76,9 @@ Register the native host:
 bash native/install.sh
 ```
 
-Paste the Extension ID when asked, then restart the browser. The script writes `com.ytdlaudio.host.json` (gitignored, since it contains your local path) into the NativeMessagingHosts folders for Brave and Chrome.
+Paste the Extension ID when asked, then restart the browser.
+
+**Before the first download**, open [config.ini](config.ini) and check two things: the browser your YouTube login is in (`cookies_from`, default `brave`) and where files should go (`music_dir` and `video_dir`, default `~/Music` and `~/Videos`). Put your own values in `config.local.ini` so updates never overwrite them. Details in [Configuration](#configuration). The script writes `com.ytdlaudio.host.json` (gitignored, since it contains your local path) into the NativeMessagingHosts folders for Brave and Chrome.
 
 Optionally keep yt-dlp current — this checks the installed vs latest version and updates through pip only if outdated:
 
@@ -138,31 +140,51 @@ The extension sends one JSON message per job to the native host:
 {
   "url": "https://www.youtube.com/watch?v=...",
   "mode": "audio",
-  "dest": "/path/to/Music/yt-rips",
+  "where": "custom",
+  "folder": "My Mix",
   "limit": null,
   "forceSingle": true
 }
 ```
 
 - `mode` — `audio` (Opus) or `video` (MKV)
-- `dest` — output folder. A trailing `/__AUTO__` becomes yt-dlp's `%(playlist_title,channel,uploader|Misc)s` template, so each playlist or channel gets its own folder
+- `where` — `flat` (the flat default folder), `auto` (yt-dlp's `%(playlist_title,channel,uploader|Misc)s` template, so each playlist or channel gets its own folder) or `custom`
+- `folder` — the name typed for `custom`. The host strips quotes, backticks, `$`, backslashes, `/` and `%`, and falls back to the flat folder if nothing usable is left, so a name like `..` can't climb out of the music or video folder
 - `limit` — integer or `null`, for "first X items"
 - `forceSingle` — `true` adds `--no-playlist`, so a `watch?v=..&list=..` URL downloads only that video
 
 ## Configuration
 
-There is no config file yet. These are hardcoded and need editing for your machine:
+Every setting lives in [config.ini](config.ini). To keep your own values, create `config.local.ini` next to it (gitignored) containing only the lines you want to change, for example:
 
-| What | Where |
-|---|---|
-| Music / video base folders | `extension/popup.js`, `extension/background.js`, `native/host.py` |
-| Browser for cookies | `COMMON_ARGS` in `native/host.py` |
-| Batch size, cache-wipe interval | `BATCH_SIZE`, `CACHE_WIPE_EVERY` in `native/host.py` |
-| Audio / video format strings | `DEFAULT_AUDIO_FMT`, `DEFAULT_VIDEO_FMT` in `native/host.py` |
+```ini
+[folders]
+music_dir = /data/Music
+video_dir = /data/Videos
+
+[browser]
+cookies_from = chrome
+```
+
+Changes apply on the next download, with no browser restart. A missing or unreadable value falls back to its default.
+
+| Section | Key | Default | What it does |
+|---|---|---|---|
+| `folders` | `music_dir` | `~/Music` | where audio downloads go |
+| `folders` | `video_dir` | `~/Videos` | where video downloads go |
+| `folders` | `flat_folder` | `yt-rips` | name of the flat default folder inside each of the two above |
+| `browser` | `cookies_from` | `brave` | browser yt-dlp reads your YouTube login from: `brave`, `chrome`, `chromium`, `edge`, `firefox`, `opera`, `vivaldi`, `BROWSER:PROFILE`, or `none` |
+| `download` | `audio_format` | `bestaudio[abr=128]/bestaudio` | yt-dlp format selector for audio |
+| `download` | `video_format` | `bestvideo+bestaudio/best` | yt-dlp format selector for video |
+| `download` | `batch_size` | `10` | playlist items per yt-dlp run |
+| `download` | `cache_wipe_every` | `10` | wipe yt-dlp's cache every N downloads |
+| `lyrics` | `enabled` | `true` | fetch lyrics after each audio download |
+
+The extension itself holds no paths: it tells the host *where* to save (flat, auto-named or custom) and the host builds the real folder from this file.
 
 ## Lyrics
 
-In audio mode, `native/add_lyrics.py` fetches lyrics for each song as it finishes downloading and embeds them in the file, using [syncedlyrics](https://github.com/moehmeni/syncedlyrics). It runs from the same folder as `host.py`, so there is nothing to configure. If `mutagen` or `syncedlyrics` isn't installed, lyrics are skipped with a one-line note and the run still counts as clean. If the script runs and fails, the terminal stays open.
+In audio mode (and unless `enabled = false` in `config.ini`), `native/add_lyrics.py` fetches lyrics for each song as it finishes downloading and embeds them in the file, using [syncedlyrics](https://github.com/moehmeni/syncedlyrics). It runs from the same folder as `host.py`, so there is nothing to configure. If `mutagen` or `syncedlyrics` isn't installed, lyrics are skipped with a one-line note and the run still counts as clean. If the script runs and fails, the terminal stays open.
 
 It also works on its own, for songs you already have:
 
@@ -200,15 +222,14 @@ It is not the same rule set as `host.py`. `host.py` only strips brackets that co
 - The `Artist - Song` split is a guess; `Song - Live at X` gets the wrong artist.
 - With an unknown playlist size, a batch that adds zero files ends the loop, so 10 private/repeat items in a row stops it early.
 - No `trap` cleanup if the terminal is closed mid-run.
-- `dest` sanitising strips quotes but not `..`.
 - Some playlist tracks are region-blocked and need a VPN.
 
 ## Planned Updates
 
-- Move the hardcoded paths, browser and extension ID into a single config.
+- Move the extension ID into the config too, so the installer doesn't have to ask.
 - Show errors inline with title and index instead of at the end of a batch.
 - Avoid filename collisions in the flat folder.
-- Share the channel regex and path logic instead of duplicating it.
+- Share the channel regex between `popup.js`, `background.js` and `host.py` instead of duplicating it.
 - Add a screenshot or GIF of it in action.
 
 Feel free to contribute via forks and Pull Requests, or open an issue if something breaks.

@@ -2,14 +2,18 @@
 """
 Native messaging host for YT Downloader - Linux version.
 
-Receives { url, mode, dest, limit, forceSingle } from the extension.
+Receives { url, mode, where, folder, limit, forceSingle } from the extension.
   mode        = 'audio' -> opus rip via yt-dlp, then lyrics via add_lyrics.py
                  (titles cleaned on the way in: 'Artist - Song (Official Video)'
                   -> title 'Song', artist 'Artist')
   mode        = 'video' -> yt-dlp, mkv output
-  dest        = output directory. If it ends in /__AUTO__, the trailing
-                segment becomes yt-dlp's own %(playlist_title,channel,...)
-                template so each playlist/channel gets its own folder.
+  where       = 'flat'   -> <base>/<flat_folder>
+                'auto'   -> <base>/<playlist or channel name>, using yt-dlp's
+                            own %(playlist_title,channel,...) template
+                'custom' -> <base>/<folder>
+                <base> is music_dir or video_dir from config.ini, so the
+                extension never needs to know any paths.
+  folder      = the name typed for 'custom' (cleaned here, see clean_folder_name)
   limit       = int or null ("first X items")
   forceSingle = true -> download only the open video, ignore playlist context
 
@@ -53,19 +57,74 @@ import tempfile
 import os
 import re
 import shlex
+import configparser
 
 CHANNEL_RE = re.compile(r'/(@[^/]+|channel/[^/]+|c/[^/]+|user/[^/]+)/(videos|streams|shorts)?')
 
-BATCH_SIZE = 10
-DEFAULT_TOTAL = 2000  # fallback upper bound if get_playlist_count() fails
+# every user-facing setting lives in config.ini (defaults) and config.local.ini
+# (personal overrides, gitignored) at the repo root. The values below are only
+# the fallback if a key is missing or can't be parsed.
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_DEFAULTS = {
+    'folders': {'music_dir': '~/Music', 'video_dir': '~/Videos', 'flat_folder': 'yt-rips'},
+    'browser': {'cookies_from': 'brave'},
+    'download': {'audio_format': 'bestaudio[abr=128]/bestaudio',
+                 'video_format': 'bestvideo+bestaudio/best',
+                 'batch_size': '10', 'cache_wipe_every': '10'},
+    'lyrics': {'enabled': 'true'},
+}
 
-DEFAULT_AUDIO_FMT = 'bestaudio[abr=128]/bestaudio'
-DEFAULT_VIDEO_FMT = 'bestvideo+bestaudio/best'
+
+def load_config():
+    cp = configparser.ConfigParser(interpolation=None)
+    cp.read_dict(CONFIG_DEFAULTS)
+    try:
+        cp.read([os.path.join(ROOT_DIR, 'config.ini'),
+                 os.path.join(ROOT_DIR, 'config.local.ini')], encoding='utf-8')
+    except configparser.Error:
+        # a malformed file shouldn't stop downloads: start again from defaults
+        cp = configparser.ConfigParser(interpolation=None)
+        cp.read_dict(CONFIG_DEFAULTS)
+    return cp
+
+
+CFG = load_config()
+
+
+def cfg_str(section, key):
+    return CFG.get(section, key).strip() or CONFIG_DEFAULTS[section][key]
+
+
+def cfg_int(section, key):
+    try:
+        return max(1, int(cfg_str(section, key)))
+    except ValueError:
+        return int(CONFIG_DEFAULTS[section][key])
+
+
+MUSIC_DIR = os.path.expanduser(cfg_str('folders', 'music_dir'))
+VIDEO_DIR = os.path.expanduser(cfg_str('folders', 'video_dir'))
+FLAT_FOLDER = cfg_str('folders', 'flat_folder')
+COOKIES_FROM = cfg_str('browser', 'cookies_from')
+DEFAULT_AUDIO_FMT = cfg_str('download', 'audio_format')
+DEFAULT_VIDEO_FMT = cfg_str('download', 'video_format')
+BATCH_SIZE = cfg_int('download', 'batch_size')
+CACHE_WIPE_EVERY = cfg_int('download', 'cache_wipe_every')
+LYRICS_ENABLED = cfg_str('lyrics', 'enabled').lower() in ('1', 'true', 'yes', 'on')
+
+DEFAULT_TOTAL = 2000  # fallback upper bound if get_playlist_count() fails
 
 LYRICS_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'add_lyrics.py')
 
-CACHE_WIPE_EVERY = 10
 RUN_COUNT_FILE = os.path.expanduser('~/.local/state/ytdl-host/run_count')
+
+
+def cookie_args():
+    """--cookies-from-browser <x>, or nothing if cookies_from = none."""
+    if COOKIES_FROM.lower() == 'none':
+        return []
+    return ['--cookies-from-browser', COOKIES_FROM]
+
 
 START_TEMPLATE = 'before_dl:[%(playlist_index|-)s/%(playlist_count|-)s] Downloading: %(title|Unknown).60s'
 DONE_TEMPLATE = 'after_move:[%(playlist_index|-)s/%(playlist_count|-)s] Saved: %(title|Unknown).60s'
@@ -73,7 +132,7 @@ PROGRESS_TEMPLATE = 'download:    %(progress._percent_str)s  %(progress._speed_s
 
 COMMON_ARGS = [
     '--embed-metadata', '--embed-thumbnail', '--convert-thumbnails', 'jpg',
-    '--cookies-from-browser', 'brave', '--concurrent-fragments', '16',
+    '--concurrent-fragments', '16',
     '--ignore-errors', '--quiet', '--no-warnings',
     '--progress', '--progress-delta', '0.3',
     '--progress-template', PROGRESS_TEMPLATE,
@@ -201,7 +260,7 @@ RETRY_BODY = r'''while true; do
     rm -f "$OUT"
     echo
     echo -e "\033[1;33mFormat '$FMT' unavailable. Listing available formats...\033[0m"
-    yt-dlp --cookies-from-browser brave -F "$URL"
+    yt-dlp @@COOKIES@@ -F "$URL"
     echo
     read -r -p "Paste the format code/string to retry with (blank to give up): " NEWFMT
     if [ -z "$NEWFMT" ]; then
@@ -291,13 +350,29 @@ def get_playlist_count(url):
     return None
 
 
-def resolve_dest(dest):
-    """Turn a .../__AUTO__ marker into a yt-dlp output-template folder that
-    auto-names itself from the channel or playlist title."""
-    if dest.endswith('/__AUTO__'):
-        base = dest[: -len('/__AUTO__')]
+def clean_folder_name(name):
+    """The 'custom' folder name, made safe to use as one path segment.
+    Quotes, backticks, $, backslashes and / are stripped (so it can't climb
+    out of the base folder or break the shell), and % is stripped because
+    yt-dlp would read it as an output template. A name that is empty or only
+    dots ('..') is rejected, which is what stops path traversal."""
+    name = re.sub(r'["\'`$\\/%]', '', name or '').strip()
+    if not name or set(name) <= {'.'}:
+        return ''
+    return name
+
+
+def resolve_target(mode, where, folder):
+    """Turn the popup's choice into a real folder (or a yt-dlp output
+    template, for 'auto') under the music/video base from config.ini."""
+    base = MUSIC_DIR if mode == 'audio' else VIDEO_DIR
+    if where == 'auto':
         return f'{base}/%(playlist_title,channel,uploader|Misc)s'
-    return dest
+    if where == 'custom':
+        name = clean_folder_name(folder)
+        if name:
+            return f'{base}/{name}'
+    return f'{base}/{FLAT_FOLDER}'
 
 
 def batch_ranges(total):
@@ -317,7 +392,7 @@ def build_script(url, mode, target, is_multi, limit=None, run_no=0):
     else:
         cache_wipe = ':'
 
-    args = COMMON_ARGS + (AUDIO_ARGS if audio else VIDEO_ARGS)
+    args = COMMON_ARGS + cookie_args() + (AUDIO_ARGS if audio else VIDEO_ARGS)
     if not is_multi:
         args = args + ['--no-playlist']  # forceSingle on a watch?v=..&list=.. url
 
@@ -346,9 +421,10 @@ def build_script(url, mode, target, is_multi, limit=None, run_no=0):
         '@@ARGS@@': shlex.join(args),
         '@@MODE@@': mode,
         '@@CACHE_WIPE@@': cache_wipe,
-        '@@LYRICS_START@@': LYRICS_START if audio else ':',
+        '@@LYRICS_START@@': LYRICS_START if (audio and LYRICS_ENABLED) else ':',
         '@@BODY@@': body,
-        '@@LYRICS_FINISH@@': LYRICS_FINISH if audio else ':',
+        '@@LYRICS_FINISH@@': LYRICS_FINISH if (audio and LYRICS_ENABLED) else ':',
+        '@@COOKIES@@': shlex.join(cookie_args()),  # last: it sits inside @@BODY@@
     }.items():
         script = script.replace(token, value)
     return script
@@ -359,7 +435,8 @@ def main():
         msg = read_message()
         url = msg.get('url', '')
         mode = msg.get('mode', 'video')
-        dest = msg.get('dest', '')
+        where = msg.get('where', 'flat')
+        folder = msg.get('folder', '')
         limit = msg.get('limit', None)
         force_single = msg.get('forceSingle', False)
 
@@ -371,15 +448,7 @@ def main():
             ('&list=' in url) or ('?list=' in url) or bool(CHANNEL_RE.search(url))
         )
 
-        # belt and braces: the script quotes everything with shlex now, but
-        # keep stripping shell-breaking chars from dest anyway.
-        dest = re.sub(r'["\'`$\\]', '', dest) if dest else dest
-
-        default_base = (
-            '/mnt/storage/Music/yt-rips' if mode == 'audio'
-            else '/mnt/storage/Videos/yt-rips'
-        )
-        target = resolve_dest(dest) if dest else default_base
+        target = resolve_target(mode, where, folder)
 
         script = build_script(url, mode, target, is_multi, limit, next_run_number())
 

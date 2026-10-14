@@ -1,5 +1,5 @@
-function runDownload(url, mode, dest, limit, forceSingle) {
-  chrome.runtime.sendNativeMessage('com.ytdlaudio.host', { url, mode, dest, limit, forceSingle }, (response) => {
+function runDownload(url, mode, where, folder, limit, forceSingle) {
+  chrome.runtime.sendNativeMessage('com.ytdlaudio.host', { url, mode, where, folder, limit, forceSingle }, (response) => {
     if (chrome.runtime.lastError) {
       console.error('Native messaging error:', chrome.runtime.lastError.message);
       return;
@@ -12,12 +12,12 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: 'audio',
-      title: '🎵 Download as audio  (ydl-audio)',
+      title: '🎵 Download as audio',
       contexts: ['action']
     });
     chrome.contextMenus.create({
       id: 'video',
-      title: '🎬 Download as video  (yt-dlp)',
+      title: '🎬 Download as video',
       contexts: ['action']
     });
   });
@@ -30,20 +30,17 @@ chrome.contextMenus.onClicked.addListener((info) => {
     const mode = info.menuItemId;
     const isMulti = tab.url.includes('&list=') || tab.url.includes('?list=') ||
                     /\/(@[^/]+|channel\/[^/]+|c\/[^/]+|user\/[^/]+)\/(videos|streams|shorts)?/.test(tab.url);
-    const base = mode === 'audio'
-      ? '/mnt/storage/Music/yt-rips'
-      : '/mnt/storage/Videos/yt-rips';
-    const dest = isMulti ? base + '/__AUTO__' : base;
+    const where = isMulti ? 'auto' : 'flat';
     const url = mode === 'audio'
       ? tab.url.replace('music.youtube.com', 'www.youtube.com')
       : tab.url;
-    runDownload(url, mode, dest, null, false);
+    runDownload(url, mode, where, '', null, false);
   });
 });
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.action === 'download') {
-    runDownload(msg.url, msg.mode, msg.dest, msg.limit, msg.forceSingle);
+    runDownload(msg.url, msg.mode, msg.where, msg.folder, msg.limit, msg.forceSingle);
   }
 });
 

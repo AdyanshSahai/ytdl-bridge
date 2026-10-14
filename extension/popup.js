@@ -8,11 +8,6 @@ let customFolder = '';
 
 let howMode = 'one'; // 'all' | 'one' | 'count'  (default: just this one)
 
-const VIDEO_BASE    = '/mnt/storage/Videos';
-const MUSIC_BASE    = '/mnt/storage/Music';
-const VIDEO_DEFAULT = VIDEO_BASE + '/yt-rips';
-const MUSIC_DEFAULT = MUSIC_BASE + '/yt-rips';
-
 function getMode(url) {
   if (url.includes('music.youtube.com')) return 'audio';
   if (url.includes('youtube.com') || url.includes('youtu.be')) return 'video';
@@ -74,20 +69,17 @@ function showToast(msg) {
   setTimeout(() => { t.textContent = ''; }, 2500);
 }
 
-// "yt-rips" -> the plain flat default folder, no auto-naming.
-// "auto"    -> yt-dlp's own output template inserts %(channel)s / %(playlist_title)s
-//              so each run auto-organizes into its own folder without any extra
-//              lookup here, signalled to host.py via the /__AUTO__ marker.
-// "custom"  -> whatever the user typed, sanitized.
-function getDestDir(mode) {
-  const base = mode === 'audio' ? MUSIC_BASE : VIDEO_BASE;
+// what was picked for "where to save". host.py turns this into a real folder
+// using config.ini, so no paths live in the extension.
+//   flat   -> the flat default folder
+//   auto   -> a folder named after the playlist/channel (yt-dlp template)
+//   custom -> a folder with the name the user typed
+function getDestChoice() {
   if (whereMode === 'custom' && customFolder.trim()) {
-    return base + '/' + customFolder.trim();
+    return { where: 'custom', folder: customFolder.trim() };
   }
-  if (whereMode === 'auto') {
-    return base + '/__AUTO__';
-  }
-  return base + '/yt-rips';
+  if (whereMode === 'auto') return { where: 'auto', folder: '' };
+  return { where: 'flat', folder: '' };
 }
 
 function buildFinalURL() {
@@ -100,7 +92,7 @@ function buildFinalURL() {
 
 function download() {
   const url    = buildFinalURL();
-  const dest   = getDestDir(currentMode);
+  const { where, folder } = getDestChoice();
   const isSingleContent = contentType === 'single';
   const limit  = (!isSingleContent && howMode === 'count')
     ? (parseInt(document.getElementById('countInput').value) || 10)
@@ -112,7 +104,8 @@ function download() {
     action: 'download',
     url,
     mode: currentMode,
-    dest,
+    where,
+    folder,
     limit,
     forceSingle: single
   });
@@ -198,10 +191,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
 
   if (mode === 'audio') {
     badge.className = 'mode-badge audio';
-    label.textContent = 'YT Music → ydl-audio';
+    label.textContent = 'YT Music → audio';
   } else if (mode === 'video') {
     badge.className = 'mode-badge video';
-    label.textContent = 'YouTube → yt-dlp';
+    label.textContent = 'YouTube → video';
   } else {
     badge.className = 'mode-badge none';
     label.textContent = 'Not a YouTube page';
