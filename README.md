@@ -51,6 +51,7 @@ This is a frontend for [yt-dlp](https://github.com/yt-dlp/yt-dlp), not a replace
 | Python 3 | for the native host |
 | Terminal emulator | konsole, gnome-terminal, xfce4-terminal or xterm, tried in that order |
 | notify-send or kdialog | for the finished notification |
+| mutagen + syncedlyrics | optional, for lyrics in audio mode: `pip install --user mutagen syncedlyrics` |
 
 yt-dlp reads your login cookies with `--cookies-from-browser brave`, so you need to be signed in to YouTube in Brave. For Chrome, change that argument in `native/host.py`.
 
@@ -155,12 +156,31 @@ There is no config file yet. These are hardcoded and need editing for your machi
 | What | Where |
 |---|---|
 | Music / video base folders | `extension/popup.js`, `extension/background.js`, `native/host.py` |
-| Lyrics script path (`LYRICS_SCRIPT`) | `native/host.py` |
 | Browser for cookies | `COMMON_ARGS` in `native/host.py` |
 | Batch size, cache-wipe interval | `BATCH_SIZE`, `CACHE_WIPE_EVERY` in `native/host.py` |
 | Audio / video format strings | `DEFAULT_AUDIO_FMT`, `DEFAULT_VIDEO_FMT` in `native/host.py` |
 
-The lyrics script is not in this repo yet. Audio mode expects it at `LYRICS_SCRIPT`.
+## Lyrics
+
+In audio mode, `native/add_lyrics.py` fetches lyrics for each song as it finishes downloading and embeds them in the file, using [syncedlyrics](https://github.com/moehmeni/syncedlyrics). It runs from the same folder as `host.py`, so there is nothing to configure. If `mutagen` or `syncedlyrics` isn't installed, lyrics are skipped with a one-line note and the run still counts as clean. If the script runs and fails, the terminal stays open.
+
+It also works on its own, for songs you already have:
+
+```bash
+python3 native/add_lyrics.py --music-dir ~/Music --whitelist yt-rips
+```
+
+`--music-dir` defaults to `$YTDL_MUSIC_DIR`, then `~/Music`. `--blacklist NAME` (repeatable) skips folders.
+
+## Tools
+
+`tools/clean_names.py` strips YouTube junk out of filenames and title tags for files that are already downloaded. It does a dry run unless you pass `--apply`:
+
+```bash
+python3 tools/clean_names.py ~/Music/yt-rips -r
+```
+
+It is not the same rule set as `host.py`. `host.py` only strips brackets that contain junk words like `(Official Video)` or `[4K]`, so `Song (Krono Remix)` keeps its remix tag. `clean_names.py` strips all bracketed text, so that file would become `Song`.
 
 ## Design Notes
 
@@ -186,7 +206,6 @@ The lyrics script is not in this repo yet. Audio mode expects it at `LYRICS_SCRI
 ## Planned Updates
 
 - Move the hardcoded paths, browser and extension ID into a single config.
-- Bring the lyrics script into `native/`.
 - Show errors inline with title and index instead of at the end of a batch.
 - Avoid filename collisions in the flat folder.
 - Share the channel regex and path logic instead of duplicating it.

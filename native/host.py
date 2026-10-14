@@ -62,7 +62,7 @@ DEFAULT_TOTAL = 2000  # fallback upper bound if get_playlist_count() fails
 DEFAULT_AUDIO_FMT = 'bestaudio[abr=128]/bestaudio'
 DEFAULT_VIDEO_FMT = 'bestvideo+bestaudio/best'
 
-LYRICS_SCRIPT = '/mnt/storage/Music/add_lyrics.py'
+LYRICS_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'add_lyrics.py')
 
 CACHE_WIPE_EVERY = 10
 RUN_COUNT_FILE = os.path.expanduser('~/.local/state/ytdl-host/run_count')
@@ -220,12 +220,15 @@ done'''
 # background lyrics worker: follows $LIST as yt-dlp appends to it. Output
 # goes to a log instead of the terminal so it can't mangle the in-place
 # progress line; the log is shown once downloads are done.
-LYRICS_START = r'''if [ -f "$LYRICS" ]; then
-  python3 -u "$LYRICS" --file-list "$LIST" --follow "$LYRDONE" > "$LYRLOG" 2>&1 &
-  LYR_PID=$!
-else
+LYRICS_START = r'''if [ ! -f "$LYRICS" ]; then
   echo "add_lyrics.py not found at $LYRICS, skipping lyrics"
   HAD_ERROR=1
+elif ! python3 -c 'import mutagen, syncedlyrics' 2>/dev/null; then
+  # lyrics are an optional extra: missing packages just skip them
+  echo "lyrics skipped (pip install --user mutagen syncedlyrics to enable)"
+else
+  python3 -u "$LYRICS" --file-list "$LIST" --follow "$LYRDONE" > "$LYRLOG" 2>&1 &
+  LYR_PID=$!
 fi'''
 
 LYRICS_FINISH = r'''if [ -n "$LYR_PID" ]; then
