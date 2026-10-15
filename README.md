@@ -194,7 +194,7 @@ Changes apply on the next download, with no browser restart. A missing or unread
 | `download` | `batch_size` | `10` | playlist items per yt-dlp run |
 | `download` | `cache_wipe_every` | `10` | wipe yt-dlp's cache every N downloads |
 | `lyrics` | `enabled` | `true` | fetch lyrics after each audio download |
-| `sync` | `mount_point`, `phone_dir`, `delete` | `~/phone`, `Internal shared storage/Music`, `false` | optional phone sync, see [Phone Sync](#phone-sync-nice-to-have) |
+| `sync` | `mount_point`, `phone_dir`, `delete` | `~/phone`, `Internal shared storage/Music`, `true` | optional phone sync, see [Phone Sync](#phone-sync-nice-to-have) |
 
 The extension itself holds no paths: it tells the host *where* to save (flat, auto-named or custom) and the host builds the real folder from this file.
 
@@ -224,7 +224,7 @@ It is not the same rule set as `host.py`. `host.py` only strips brackets that co
 
 Optional. Copies `music_dir` to an Android phone over USB. Needs `jmtpfs` and `rsync` (for example `sudo dnf install jmtpfs rsync`). Plug the phone in, unlock it, set USB mode to **File transfer**, then right-click the extension icon and pick **Sync music to phone** (or use the small link in the popup, or run `bash scripts/sync.sh`).
 
-It reads `music_dir` and the `[sync]` section of your config. `mount_point` and `phone_dir` say where the phone mounts and which folder on it to fill. `delete = false` by default, so nothing on the phone is ever removed. Set `delete = true` in `config_local.ini` to make the phone mirror your folder exactly. Scripts, `.ini` files, hidden files, temp files and `Misc` folders are never copied.
+It reads `music_dir` and the `[sync]` section of your config. `mount_point` and `phone_dir` say where the phone mounts and which folder on it to fill. `delete = true` by default, so the phone mirrors your folder exactly: songs on the phone that are not in `music_dir` get removed. Set `delete = false` in `config_local.ini` to only add and update files. Scripts, `.ini` files, hidden files, temp files and `Misc` folders are never copied.
 
 ## Terminal Output
 
