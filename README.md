@@ -7,25 +7,15 @@ One-click yt-dlp frontend for Brave/Chrome — click the extension on a YouTube 
 ![Manifest](https://img.shields.io/badge/extension-MV3-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-## Table of Contents
-- [Quick Start](#quick-start)
-- [How It Works](#how-it-works)
-- [Using It](#using-it)
-- [Updating](#updating)
-- [Uninstalling](#uninstalling)
-- [Troubleshooting](#troubleshooting)
-- [Popup Options](#popup-options)
-- [Configuration](#configuration)
-- [Lyrics](#lyrics)
-- [Tools](#tools)
-- [Phone Sync (nice to have)](#phone-sync-nice-to-have)
-- [Terminal Output](#terminal-output)
-- [Message Format](#message-format)
-- [Design Notes](#design-notes)
-- [Known Issues](#known-issues)
-- [Planned Updates](#planned-updates)
-- [Credits](#credits)
-- [License](#license)
+<!-- TODO: drop a ~10 s screen recording here, e.g. docs/demo.gif:
+![ytdl-bridge in action](docs/demo.gif)
+Click the icon on a YT Music playlist, the terminal opens, progress ticks, the notification fires. -->
+
+- **One click** on any YouTube or YT Music page, or `Ctrl+Shift+Y`
+- **Music comes out as tagged Opus** with clean artist and title, plus synced lyrics
+- **Whole playlists and channels** download in batches, without the cookies going stale
+- **Keeps running if you close the browser.** The terminal closes itself after a clean run and stays open only if something broke
+- **One config file**, with an installer for Brave, Chrome, Chromium, Vivaldi and Edge
 
 ## Quick Start
 
@@ -135,18 +125,6 @@ bash scripts/uninstall.sh
 ```
 
 This removes the host registration and the small run counter in `~/.local/state/ytdl-host`. Then remove the extension at `brave://extensions` and delete the cloned folder. Your downloads are not touched.
-
-## Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| Nothing happens when you click Download | The host isn't registered. Run `bash scripts/install.sh` again and fully restart the browser. |
-| It worked, then stopped after you moved the folder | The registration remembers where `host.py` was. Re-run `bash scripts/install.sh` from the new location, and reload the extension from there. |
-| "Sign in to confirm you're not a bot" or age-restricted errors | yt-dlp isn't getting your cookies. Check `cookies_from` in your config matches the browser you're logged in with, and that you're signed in to YouTube there. |
-| Old or odd yt-dlp errors | Run `bash scripts/update.sh`, or update yt-dlp with your package manager. |
-| Terminal stays open after a download | By design: something reported an error. Read the lines above the prompt. |
-| No terminal opens | Install one of konsole, gnome-terminal, xfce4-terminal or xterm. |
-| Using another browser (Opera, a Flatpak browser...) | The installer only knows Brave, Chrome, Chromium, Vivaldi and Edge. Copy `native/com.ytdlbridge.host.json` (created by the installer) into that browser's `NativeMessagingHosts` folder by hand. |
 
 ## Popup Options
 
@@ -270,6 +248,15 @@ The extension sends one JSON message per job to the native host:
 - **yt-dlp cache wiped every 10 runs.** The counter lives in `~/.local/state/ytdl-host/run_count`.
 - **Format-retry loop for singles.** On "Requested format is not available" the terminal lists formats and lets you paste one to retry with.
 
+## Security
+
+The extension talks to a local program, so the doors are worth spelling out:
+
+- **Only this extension can call the host.** The native messaging manifest's `allowed_origins` lists the one fixed extension ID (the `key` in `extension/manifest.json` pins it), so other extensions and web pages can't send it jobs. Nothing listens on a network port.
+- **The URL can't inject shell.** `host.py` writes the download as a bash script, and every value that goes into it (URL, folder, format) is passed through `shlex.quote`. The template is filled in a single pass, so a URL that happens to contain a placeholder like `@@BODY@@` stays inside its quotes. Inside the script the URL is only ever used as a quoted `"$URL"`.
+- **Folder names are sanitised.** Quotes, backticks, `$`, backslashes, `/` and `%` are stripped, and `..` is rejected, so a custom folder can't leave the music or video folder.
+- **Config is trusted.** `config.ini` and `config_local.ini` are yours; `cookies_from` and the format selectors are passed to yt-dlp as arguments, not run through a shell.
+
 ## Known Issues
 
 - `ERROR` lines print at the end of each batch with only a video ID, not inline at the failing item.
@@ -279,9 +266,20 @@ The extension sends one JSON message per job to the native host:
 - No `trap` cleanup if the terminal is closed mid-run.
 - Some playlist tracks are region-blocked and need a VPN.
 
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Nothing happens when you click Download | The host isn't registered. Run `bash scripts/install.sh` again and fully restart the browser. |
+| It worked, then stopped after you moved the folder | The registration remembers where `host.py` was. Re-run `bash scripts/install.sh` from the new location, and reload the extension from there. |
+| "Sign in to confirm you're not a bot" or age-restricted errors | yt-dlp isn't getting your cookies. Check `cookies_from` in your config matches the browser you're logged in with, and that you're signed in to YouTube there. |
+| Old or odd yt-dlp errors | Run `bash scripts/update.sh`, or update yt-dlp with your package manager. |
+| Terminal stays open after a download | By design: something reported an error. Read the lines above the prompt. |
+| No terminal opens | Install one of konsole, gnome-terminal, xfce4-terminal or xterm. |
+| Using another browser (Opera, a Flatpak browser...) | The installer only knows Brave, Chrome, Chromium, Vivaldi and Edge. Copy `native/com.ytdlbridge.host.json` (created by the installer) into that browser's `NativeMessagingHosts` folder by hand. |
+
 ## Planned Updates
 
-- Move the extension ID into the config too, so the installer doesn't have to ask.
 - Show errors inline with title and index instead of at the end of a batch.
 - Avoid filename collisions in the flat folder.
 - Share the channel regex between `popup.js`, `background.js` and `host.py` instead of duplicating it.
