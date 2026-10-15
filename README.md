@@ -76,7 +76,7 @@ Open [config.ini](config.ini). Two lines matter on a first run:
 - `cookies_from = brave` — change to `chrome` (or `firefox`, `edge`...) if your YouTube login is in another browser
 - `music_dir` / `video_dir` — where files go, `~/Music` and `~/Videos` by default
 
-Put changes in a new file called `config.local.ini` so updates never overwrite them. See [Configuration](#configuration).
+Put changes in a new file called `config_local.ini` so updates never overwrite them. See [Configuration](#configuration).
 
 **6. Try it**
 
@@ -174,7 +174,7 @@ On a bare playlist/channel page with nothing playing, "Just this video" is hidde
 
 ## Configuration
 
-Every setting lives in [config.ini](config.ini). To keep your own values, create `config.local.ini` next to it (gitignored) containing only the lines you want to change, for example:
+Every setting lives in [config.ini](config.ini). To keep your own values, create `config_local.ini` next to it (gitignored) containing only the lines you want to change, for example:
 
 ```ini
 [folders]

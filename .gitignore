@@ -4,5 +4,5 @@ __pycache__/
 cookies*.txt
 .directory
 native/com.ytdlbridge.host.json
-config.local.ini
+config_local.ini
 scripts/sync.sh

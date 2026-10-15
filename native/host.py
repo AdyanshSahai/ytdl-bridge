@@ -61,7 +61,7 @@ import configparser
 
 CHANNEL_RE = re.compile(r'/(@[^/]+|channel/[^/]+|c/[^/]+|user/[^/]+)/(videos|streams|shorts)?')
 
-# every user-facing setting lives in config.ini (defaults) and config.local.ini
+# every user-facing setting lives in config.ini (defaults) and config_local.ini
 # (personal overrides, gitignored) at the repo root. The values below are only
 # the fallback if a key is missing or can't be parsed.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,7 +80,7 @@ def load_config():
     cp.read_dict(CONFIG_DEFAULTS)
     try:
         cp.read([os.path.join(ROOT_DIR, 'config.ini'),
-                 os.path.join(ROOT_DIR, 'config.local.ini')], encoding='utf-8')
+                 os.path.join(ROOT_DIR, 'config_local.ini')], encoding='utf-8')
     except configparser.Error:
         # a malformed file shouldn't stop downloads: start again from defaults
         cp = configparser.ConfigParser(interpolation=None)
