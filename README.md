@@ -69,14 +69,9 @@ bash scripts/install.sh
 
 It finds your browser (Brave, Chrome, Chromium, Vivaldi or Edge) and registers the host. There's no ID to copy: the extension has a fixed ID, so it works on any machine. Then **fully restart the browser**.
 
-**5. Check the settings (30 seconds)**
+**5. Answer the setup questions**
 
-Open [config.ini](config.ini). Two lines matter on a first run:
-
-- `cookies_from = brave` — change to `chrome` (or `firefox`, `edge`...) if your YouTube login is in another browser
-- `music_dir` / `video_dir` — where files go, `~/Music` and `~/Videos` by default
-
-Put changes in a new file called `config_local.ini` so updates never overwrite them. See [Configuration](#configuration).
+At the end of `install.sh` you're asked three things: which browser holds your YouTube login (`brave` by default), and where audio and video should be saved (`~/Music` and `~/Videos` by default). Press Enter to accept a default. Your answers are saved to `config_local.ini` so updates never overwrite them, and only values that differ from the defaults are written. Everything else is in [config.ini](config.ini); see [Configuration](#configuration).
 
 **6. Try it**
 
