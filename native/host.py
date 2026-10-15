@@ -300,7 +300,7 @@ LYRICS_FINISH = r'''if [ -n "$LYR_PID" ]; then
   wait "$LYR_PID" || { echo "lyrics step reported errors (exit $?)"; HAD_ERROR=1; }
 fi'''
 
-CACHE_WIPE = r'''echo "Run #@@RUN_NO@@: wiping yt-dlp cache (every @@EVERY@@ runs)..."
+CACHE_WIPE = r'''echo "Clearing buffer..."
 yt-dlp --rm-cache-dir >/dev/null 2>&1 || echo "cache wipe failed, carrying on"'''
 
 
@@ -389,8 +389,7 @@ def batch_ranges(total):
 def build_script(url, mode, target, is_multi, limit=None, run_no=0):
     audio = (mode == 'audio')
     if run_no and run_no % CACHE_WIPE_EVERY == 0:
-        cache_wipe = (CACHE_WIPE.replace('@@RUN_NO@@', str(run_no))
-                                .replace('@@EVERY@@', str(CACHE_WIPE_EVERY)))
+        cache_wipe = CACHE_WIPE
     else:
         cache_wipe = ':'
 
