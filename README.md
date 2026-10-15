@@ -172,7 +172,7 @@ Changes apply on the next download, with no browser restart. A missing or unread
 | `download` | `batch_size` | `10` | playlist items per yt-dlp run |
 | `download` | `cache_wipe_every` | `10` | wipe yt-dlp's cache every N downloads |
 | `lyrics` | `enabled` | `true` | fetch lyrics after each audio download |
-| `sync` | `mount_point`, `phone_dir`, `delete` | `~/phone`, `Internal shared storage/Music`, `true` | optional phone sync, see [Phone Sync](#phone-sync-nice-to-have) |
+| `sync` | `mount_point`, `phone_dir`, `delete` | `~/phone`, `Internal shared storage/Music`, `true` | optional phone sync, see [Phone Sync](#phone-sync-optional) |
 
 The extension itself holds no paths: it tells the host *where* to save (flat, auto-named or custom) and the host builds the real folder from this file.
 
@@ -198,7 +198,7 @@ python3 tools/clean_names.py ~/Music/yt-rips -r
 
 It is not the same rule set as `host.py`. `host.py` only strips brackets that contain junk words like `(Official Video)` or `[4K]`, so `Song (Krono Remix)` keeps its remix tag. `clean_names.py` strips all bracketed text, so that file would become `Song`.
 
-## Phone Sync (nice to have)
+## Phone Sync (optional)
 
 Optional. Copies `music_dir` to an Android phone over USB. Needs `jmtpfs` and `rsync` (for example `sudo dnf install jmtpfs rsync`). Plug the phone in, unlock it, set USB mode to **File transfer**, then right-click the extension icon and pick **Sync music to phone** (or use the small link in the popup, or run `bash scripts/sync.sh`).
 
@@ -255,7 +255,7 @@ The extension talks to a local program, so the doors are worth spelling out:
 - **Only this extension can call the host.** The native messaging manifest's `allowed_origins` lists the one fixed extension ID (the `key` in `extension/manifest.json` pins it), so other extensions and web pages can't send it jobs. Nothing listens on a network port.
 - **The URL can't inject shell.** `host.py` writes the download as a bash script, and every value that goes into it (URL, folder, format) is passed through `shlex.quote`. The template is filled in a single pass, so a URL that happens to contain a placeholder like `@@BODY@@` stays inside its quotes. Inside the script the URL is only ever used as a quoted `"$URL"`.
 - **Folder names are sanitised.** Quotes, backticks, `$`, backslashes, `/` and `%` are stripped, and `..` is rejected, so a custom folder can't leave the music or video folder.
-- **Config is trusted.** `config.ini` and `config_local.ini` are yours; `cookies_from` and the format selectors are passed to yt-dlp as arguments, not run through a shell.
+- **Config is trusted.** `config.ini` and `config_local.ini` are yours; `cookies_from` and the format selectors are quoted into the script like every other value.
 
 ## Known Issues
 
