@@ -413,8 +413,9 @@ def build_script(url, mode, target, is_multi, limit=None, run_no=0):
     else:
         body = RETRY_BODY
 
-    script = SCRIPT_TEMPLATE
-    for token, value in {
+    # the cookie args sit inside the body, so fill them in there first
+    body = body.replace('@@COOKIES@@', shlex.join(cookie_args()))
+    values = {
         '@@FMT@@': shlex.quote(DEFAULT_AUDIO_FMT if audio else DEFAULT_VIDEO_FMT),
         '@@TARGET@@': shlex.quote(target),
         '@@URL@@': shlex.quote(url),
@@ -425,9 +426,10 @@ def build_script(url, mode, target, is_multi, limit=None, run_no=0):
         '@@LYRICS_START@@': LYRICS_START if (audio and LYRICS_ENABLED) else ':',
         '@@BODY@@': body,
         '@@LYRICS_FINISH@@': LYRICS_FINISH if (audio and LYRICS_ENABLED) else ':',
-        '@@COOKIES@@': shlex.join(cookie_args()),  # last: it sits inside @@BODY@@
-    }.items():
-        script = script.replace(token, value)
+    }
+    # one pass over the template: a value is never searched for further tokens,
+    # so a url that happens to contain "@@BODY@@" stays inside its quotes
+    script = re.sub(r'@@[A-Z_]+@@', lambda m: values.get(m.group(0), m.group(0)), SCRIPT_TEMPLATE)
     return script
 
 
