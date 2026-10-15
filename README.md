@@ -18,6 +18,7 @@ One-click yt-dlp frontend for Brave/Chrome — click the extension on a YouTube 
 - [Configuration](#configuration)
 - [Lyrics](#lyrics)
 - [Tools](#tools)
+- [Phone Sync (nice to have)](#phone-sync-nice-to-have)
 - [Terminal Output](#terminal-output)
 - [Message Format](#message-format)
 - [Design Notes](#design-notes)
@@ -94,7 +95,7 @@ Where things live:
 |---|---|
 | `extension/` | the browser extension (popup, right-click menu, shortcut) |
 | `native/` | the native host (`host.py`) and the lyrics script |
-| `scripts/` | `install.sh`, `update.sh`, `uninstall.sh` |
+| `scripts/` | `install.sh`, `update.sh`, `uninstall.sh`, `sync.sh` |
 | `tools/` | optional extras, like the filename cleaner |
 | `config.ini` | every setting, in one file |
 
@@ -193,6 +194,7 @@ Changes apply on the next download, with no browser restart. A missing or unread
 | `download` | `batch_size` | `10` | playlist items per yt-dlp run |
 | `download` | `cache_wipe_every` | `10` | wipe yt-dlp's cache every N downloads |
 | `lyrics` | `enabled` | `true` | fetch lyrics after each audio download |
+| `sync` | `mount_point`, `phone_dir`, `delete` | `~/phone`, `Internal shared storage/Music`, `false` | optional phone sync, see [Phone Sync](#phone-sync-nice-to-have) |
 
 The extension itself holds no paths: it tells the host *where* to save (flat, auto-named or custom) and the host builds the real folder from this file.
 
@@ -217,6 +219,12 @@ python3 tools/clean_names.py ~/Music/yt-rips -r
 ```
 
 It is not the same rule set as `host.py`. `host.py` only strips brackets that contain junk words like `(Official Video)` or `[4K]`, so `Song (Krono Remix)` keeps its remix tag. `clean_names.py` strips all bracketed text, so that file would become `Song`.
+
+## Phone Sync (nice to have)
+
+Optional. Copies `music_dir` to an Android phone over USB. Needs `jmtpfs` and `rsync` (for example `sudo dnf install jmtpfs rsync`). Plug the phone in, unlock it, set USB mode to **File transfer**, then right-click the extension icon and pick **Sync music to phone** (or use the small link in the popup, or run `bash scripts/sync.sh`).
+
+It reads `music_dir` and the `[sync]` section of your config. `mount_point` and `phone_dir` say where the phone mounts and which folder on it to fill. `delete = false` by default, so nothing on the phone is ever removed. Set `delete = true` in `config_local.ini` to make the phone mirror your folder exactly. Scripts, `.ini` files, hidden files, temp files and `Misc` folders are never copied.
 
 ## Terminal Output
 

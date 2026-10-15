@@ -8,6 +8,16 @@ function runDownload(url, mode, where, folder, limit, forceSingle) {
   });
 }
 
+function runSync() {
+  chrome.runtime.sendNativeMessage('com.ytdlbridge.host', { action: 'sync' }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error('Native messaging error:', chrome.runtime.lastError.message);
+      return;
+    }
+    console.log('Native host response:', response);
+  });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
@@ -20,11 +30,17 @@ chrome.runtime.onInstalled.addListener(() => {
       title: '🎬 Download as video',
       contexts: ['action']
     });
+    chrome.contextMenus.create({
+      id: 'sync',
+      title: '📱 Sync music to phone',
+      contexts: ['action']
+    });
   });
 });
 
 // Right-click: no popups, default dir (auto-named for playlists/channels), full length
 chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === 'sync') { runSync(); return; }
   chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
     if (!tab?.url) return;
     const mode = info.menuItemId;
@@ -39,7 +55,9 @@ chrome.contextMenus.onClicked.addListener((info) => {
 });
 
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.action === 'download') {
+  if (msg.action === 'sync') {
+    runSync();
+  } else if (msg.action === 'download') {
     runDownload(msg.url, msg.mode, msg.where, msg.folder, msg.limit, msg.forceSingle);
   }
 });

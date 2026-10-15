@@ -221,6 +221,17 @@
       height: 16px;
     }
 
+    .sync-link {
+      display: block;
+      margin: 6px auto 0;
+      background: none;
+      border: none;
+      color: rgb(100, 102, 110);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .sync-link:hover { color: rgb(188, 139, 202); }
+
     .unsupported {
       text-align: center;
       color: rgb(100, 102, 110);
@@ -307,6 +318,8 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <button class="sync-link" id="btnSync" title="Needs jmtpfs and rsync, see README">📱 Sync music to phone</button>
 
   <script src="popup.js"></script>
 </body>

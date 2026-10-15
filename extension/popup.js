@@ -224,3 +224,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
   document.getElementById('btnAudio').addEventListener('click', () => startDownload('audio'));
   document.getElementById('btnVideo').addEventListener('click', () => startDownload('video'));
 });
+
+document.getElementById('btnSync').addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'sync' });
+  showToast('Sync started in a terminal');
+});

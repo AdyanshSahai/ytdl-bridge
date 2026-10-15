@@ -114,6 +114,8 @@ LYRICS_ENABLED = cfg_str('lyrics', 'enabled').lower() in ('1', 'true', 'yes', 'o
 
 DEFAULT_TOTAL = 2000  # fallback upper bound if get_playlist_count() fails
 
+SYNC_SCRIPT = os.path.join(ROOT_DIR, 'scripts', 'sync.sh')
+
 LYRICS_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'add_lyrics.py')
 
 RUN_COUNT_FILE = os.path.expanduser('~/.local/state/ytdl-host/run_count')
@@ -430,9 +432,32 @@ def build_script(url, mode, target, is_multi, limit=None, run_no=0):
     return script
 
 
+def launch_terminal(script_path):
+    """Run a bash script in the first terminal emulator found."""
+    terminals = [
+        ['konsole', '-e', 'bash', script_path],
+        ['gnome-terminal', '--', 'bash', script_path],
+        ['xfce4-terminal', '-e', f'bash {script_path}'],
+        ['xterm', '-e', f'bash {script_path}'],
+    ]
+    for term in terminals:
+        if shutil.which(term[0]):
+            subprocess.Popen(term)
+            return True
+    return False
+
+
 def main():
     try:
         msg = read_message()
+        if msg.get('action') == 'sync':
+            if not os.path.isfile(SYNC_SCRIPT):
+                send_message({'status': 'error', 'message': 'scripts/sync.sh not found'})
+            elif launch_terminal(SYNC_SCRIPT):
+                send_message({'status': 'ok', 'action': 'sync'})
+            else:
+                send_message({'status': 'error', 'message': 'No terminal emulator found'})
+            sys.exit(0)
         url = msg.get('url', '')
         mode = msg.get('mode', 'video')
         where = msg.get('where', 'flat')
@@ -457,19 +482,7 @@ def main():
             f.write(script)
         os.chmod(script_path, 0o755)
 
-        terminals = [
-            ['konsole', '-e', 'bash', script_path],
-            ['gnome-terminal', '--', 'bash', script_path],
-            ['xfce4-terminal', '-e', f'bash {script_path}'],
-            ['xterm', '-e', f'bash {script_path}'],
-        ]
-
-        launched = False
-        for term in terminals:
-            if shutil.which(term[0]):
-                subprocess.Popen(term)
-                launched = True
-                break
+        launched = launch_terminal(script_path)
 
         if launched:
             send_message({'status': 'ok', 'mode': mode, 'url': url, 'dest': target})

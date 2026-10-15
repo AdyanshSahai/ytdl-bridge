@@ -5,4 +5,3 @@ cookies*.txt
 .directory
 native/com.ytdlbridge.host.json
 config_local.ini
-scripts/sync.sh
