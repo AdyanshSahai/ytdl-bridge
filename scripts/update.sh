@@ -1,5 +1,5 @@
 #!/bin/bash
-# update_ytdlp.sh — shows current vs latest yt-dlp version, updates via pip
+# update.sh — shows current vs latest yt-dlp version, updates via pip
 # only if outdated, then confirms the result.
 #
 # Confirmed install method: pip (user-site, ~/.local/lib/python3.14/site-packages).

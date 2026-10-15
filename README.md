@@ -60,15 +60,14 @@ Keep this folder where it is. The extension and the host both run from it.
 1. Open `brave://extensions` (or `chrome://extensions`)
 2. Turn on **Developer mode** (top right)
 3. Click **Load unpacked** and pick the `extension/` folder inside the repo
-4. Copy the **ID** shown on the extension's card (a long string of letters)
 
 **4. Register the native host**
 
 ```bash
-bash native/install.sh
+bash scripts/install.sh
 ```
 
-Paste the ID when it asks. Then **fully restart the browser**.
+It finds your browser (Brave, Chrome, Chromium, Vivaldi or Edge) and registers the host. There's no ID to copy: the extension has a fixed ID, so it works on any machine. Then **fully restart the browser**.
 
 **5. Check the settings (30 seconds)**
 
@@ -93,6 +92,16 @@ native/host.py ── builds a bash script ──▶ terminal ──▶ yt-dlp, 
         │
    replies {status: ok} and exits
 ```
+
+Where things live:
+
+| Folder | What's in it |
+|---|---|
+| `extension/` | the browser extension (popup, right-click menu, shortcut) |
+| `native/` | the native host (`host.py`) and the lyrics script |
+| `scripts/` | `install.sh`, `update.sh`, `uninstall.sh` |
+| `tools/` | optional extras, like the filename cleaner |
+| `config.ini` | every setting, in one file |
 
 The extension is a thin frontend. It reads the page you're on and sends the job to a Python [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging) host over stdin (4-byte length prefix + JSON). The host generates a bash script, launches it in a terminal and exits. The terminal runs detached, so closing the popup or the browser doesn't stop a download. It closes itself after a clean run and stays open on any error.
 
@@ -119,29 +128,29 @@ cd ytdl-bridge
 git pull
 ```
 
-Then click the reload arrow on the extension at `brave://extensions`. You don't need to run the installer again. To keep yt-dlp itself current, run `bash native/update.sh` (it updates through pip only if the installed version is outdated).
+Then click the reload arrow on the extension at `brave://extensions`. You don't need to run the installer again, unless you moved the folder.
+
+To keep yt-dlp itself current, run `bash scripts/update.sh`. It updates a pip install, and only if the installed version is outdated. If you installed yt-dlp with your package manager, update it with that instead.
 
 ## Uninstalling
 
 ```bash
-rm -f ~/.config/BraveSoftware/Brave-Browser/NativeMessagingHosts/com.ytdlaudio.host.json
-rm -f ~/.config/google-chrome/NativeMessagingHosts/com.ytdlaudio.host.json
-rm -rf ~/.local/state/ytdl-host
+bash scripts/uninstall.sh
 ```
 
-Then remove the extension at `brave://extensions` and delete the cloned folder. Your downloads are not touched.
+This removes the host registration and the small run counter in `~/.local/state/ytdl-host`. Then remove the extension at `brave://extensions` and delete the cloned folder. Your downloads are not touched.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| Nothing happens when you click Download | The host isn't registered. Run `bash native/install.sh` again, paste the ID, and fully restart the browser. |
-| It worked, then stopped after you moved the folder | An unpacked extension's ID depends on its location. Remove the extension, load it again from the new place, and re-run `bash native/install.sh` with the new ID. |
+| Nothing happens when you click Download | The host isn't registered. Run `bash scripts/install.sh` again and fully restart the browser. |
+| It worked, then stopped after you moved the folder | The registration remembers where `host.py` was. Re-run `bash scripts/install.sh` from the new location, and reload the extension from there. |
 | "Sign in to confirm you're not a bot" or age-restricted errors | yt-dlp isn't getting your cookies. Check `cookies_from` in your config matches the browser you're logged in with, and that you're signed in to YouTube there. |
-| Old or odd yt-dlp errors | Run `bash native/update.sh`. |
+| Old or odd yt-dlp errors | Run `bash scripts/update.sh`, or update yt-dlp with your package manager. |
 | Terminal stays open after a download | By design: something reported an error. Read the lines above the prompt. |
 | No terminal opens | Install one of konsole, gnome-terminal, xfce4-terminal or xterm. |
-| Using Chromium, Vivaldi or Edge | The installer only registers Brave and Chrome. Copy `native/com.ytdlaudio.host.json` (created by the installer) into that browser's `NativeMessagingHosts` folder, for example `~/.config/chromium/NativeMessagingHosts/`. |
+| Using another browser (Opera, a Flatpak browser...) | The installer only knows Brave, Chrome, Chromium, Vivaldi and Edge. Copy `native/com.ytdlaudio.host.json` (created by the installer) into that browser's `NativeMessagingHosts` folder by hand. |
 
 ## Popup Options
 
