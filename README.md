@@ -150,7 +150,7 @@ This removes the host registration and the small run counter in `~/.local/state/
 | Old or odd yt-dlp errors | Run `bash scripts/update.sh`, or update yt-dlp with your package manager. |
 | Terminal stays open after a download | By design: something reported an error. Read the lines above the prompt. |
 | No terminal opens | Install one of konsole, gnome-terminal, xfce4-terminal or xterm. |
-| Using another browser (Opera, a Flatpak browser...) | The installer only knows Brave, Chrome, Chromium, Vivaldi and Edge. Copy `native/com.ytdlaudio.host.json` (created by the installer) into that browser's `NativeMessagingHosts` folder by hand. |
+| Using another browser (Opera, a Flatpak browser...) | The installer only knows Brave, Chrome, Chromium, Vivaldi and Edge. Copy `native/com.ytdlbridge.host.json` (created by the installer) into that browser's `NativeMessagingHosts` folder by hand. |
 
 ## Popup Options
 

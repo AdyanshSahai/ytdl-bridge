@@ -3,6 +3,6 @@ __pycache__/
 *.pyc
 cookies*.txt
 .directory
-native/com.ytdlaudio.host.json
+native/com.ytdlbridge.host.json
 config.local.ini
 scripts/sync.sh

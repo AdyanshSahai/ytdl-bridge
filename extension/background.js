@@ -1,5 +1,5 @@
 function runDownload(url, mode, where, folder, limit, forceSingle) {
-  chrome.runtime.sendNativeMessage('com.ytdlaudio.host', { url, mode, where, folder, limit, forceSingle }, (response) => {
+  chrome.runtime.sendNativeMessage('com.ytdlbridge.host', { url, mode, where, folder, limit, forceSingle }, (response) => {
     if (chrome.runtime.lastError) {
       console.error('Native messaging error:', chrome.runtime.lastError.message);
       return;

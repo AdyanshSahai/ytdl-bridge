@@ -9,7 +9,7 @@ for dir in \
   "$HOME/.config/chromium" \
   "$HOME/.config/vivaldi" \
   "$HOME/.config/microsoft-edge"; do
-  f="$dir/NativeMessagingHosts/com.ytdlaudio.host.json"
+  f="$dir/NativeMessagingHosts/com.ytdlbridge.host.json"
   if [ -f "$f" ]; then
     rm -f "$f" && echo "removed $f"
   fi

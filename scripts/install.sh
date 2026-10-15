@@ -11,7 +11,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 HOST_PY="$ROOT_DIR/native/host.py"
-MANIFEST="$ROOT_DIR/native/com.ytdlaudio.host.json"
+MANIFEST="$ROOT_DIR/native/com.ytdlbridge.host.json"
 EXT_ID="${EXT_ID:-pflffcomdgpcbbgllmaomoflhbigmohf}"
 
 # label | browser config dir (a NativeMessagingHosts folder goes inside it)
@@ -28,7 +28,7 @@ chmod +x "$HOST_PY"
 # write the manifest with the real path to host.py
 cat > "$MANIFEST" << JSON
 {
-  "name": "com.ytdlaudio.host",
+  "name": "com.ytdlbridge.host",
   "description": "Native host for ytdl-bridge",
   "path": "$HOST_PY",
   "type": "stdio",
@@ -48,7 +48,7 @@ for entry in "${BROWSERS[@]}"; do
   dir="${entry#*|}"
   if [ -d "$dir" ]; then
     mkdir -p "$dir/NativeMessagingHosts"
-    cp "$MANIFEST" "$dir/NativeMessagingHosts/com.ytdlaudio.host.json"
+    cp "$MANIFEST" "$dir/NativeMessagingHosts/com.ytdlbridge.host.json"
     echo "  registered with $label"
     FOUND=1
   fi

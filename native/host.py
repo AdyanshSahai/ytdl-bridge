@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Native messaging host for YT Downloader - Linux version.
+Native messaging host for ytdl-bridge - Linux version.
 
 Receives { url, mode, where, folder, limit, forceSingle } from the extension.
   mode        = 'audio' -> opus rip via yt-dlp, then lyrics via add_lyrics.py
@@ -184,9 +184,9 @@ run_dl() {
 
 notify() {
   if command -v notify-send >/dev/null 2>&1; then
-    notify-send -a "YT Downloader" -- "$1" "$2" || { echo "notify-send failed (exit $?), no desktop notification sent"; HAD_ERROR=1; }
+    notify-send -a "ytdl-bridge" -- "$1" "$2" || { echo "notify-send failed (exit $?), no desktop notification sent"; HAD_ERROR=1; }
   elif command -v kdialog >/dev/null 2>&1; then
-    kdialog --title "YT Downloader" --passivepopup "$1: $2" 8 || { echo "kdialog failed, no desktop notification sent"; HAD_ERROR=1; }
+    kdialog --title "ytdl-bridge" --passivepopup "$1: $2" 8 || { echo "kdialog failed, no desktop notification sent"; HAD_ERROR=1; }
   else
     echo "no notify-send or kdialog found, no desktop notification sent"
     HAD_ERROR=1
