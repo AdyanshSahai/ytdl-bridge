@@ -144,13 +144,16 @@ COMMON_ARGS = [
     '--postprocessor-args', 'ffmpeg:-loglevel quiet -hide_banner',
 ]
 # youtube titles are usually "Artist - Song (Official 4K Video)". split off the
-# artist, then strip bracketed junk. runs before the filename is built, so the
-# file name, title tag and artist tag all come out clean. titles without
+# artist, then strip bracketed junk. a first rule cuts everything from the first
+# " | " onward ("Song | Genre | Channel"), and it must run before the split.
+# all of it runs before the filename is built, so the file name, title tag and
+# artist tag all come out clean. titles without
 # " - " just skip the split (the failure is hidden by --no-warnings).
 TITLE_JUNK_RE = (r'(?i)\s*[\(\[][^\)\]]*\b(?:official|video|audio|lyrics?|'
                  r'visuali[sz]er|4k|hd|hq|mv|m/v|remaster(?:ed)?)\b[^\)\]]*[\)\]]')
 AUDIO_ARGS = [
     '-x', '--audio-format', 'opus', '--audio-quality', '128',
+    '--replace-in-metadata', 'title', r' \| .*$', '',
     '--parse-metadata', r'title:^(?P<artist>.+?) - (?P<title>.+)$',
     '--replace-in-metadata', 'title', TITLE_JUNK_RE, '',
 ]

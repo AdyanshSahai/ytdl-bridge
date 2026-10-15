@@ -7,9 +7,8 @@ One-click yt-dlp frontend for Brave/Chrome — click the extension on a YouTube 
 ![Manifest](https://img.shields.io/badge/extension-MV3-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-<!-- TODO: drop a ~10 s screen recording here, e.g. docs/demo.gif:
 ![ytdl-bridge in action](docs/demo.gif)
-Click the icon on a YT Music playlist, the terminal opens, progress ticks, the notification fires. -->
+<sub>Sped up 2x. Demo tracks: Cartoon, Jéja – On & On (feat. Daniel Levi) and Janji – Heroes Tonight (feat. Johnning) [NCS Release]</sub>
 
 - **One click** on any YouTube or YT Music page, or `Ctrl+Shift+Y`
 - **Music comes out as tagged Opus** with clean artist and title, plus synced lyrics
@@ -181,6 +180,8 @@ The extension itself holds no paths: it tells the host *where* to save (flat, au
 
 In audio mode (and unless `enabled = false` in `config.ini`), `native/add_lyrics.py` fetches lyrics for each song as it finishes downloading and embeds them in the file, using [syncedlyrics](https://github.com/moehmeni/syncedlyrics). It runs from the same folder as `host.py`, so there is nothing to configure. If `mutagen` or `syncedlyrics` isn't installed, lyrics are skipped with a one-line note and the run still counts as clean. If the script runs and fails, the terminal stays open.
 
+![Synced lyrics in Elisa](docs/lyrics.png)
+
 It also works on its own, for songs you already have:
 
 ```bash
@@ -201,7 +202,7 @@ It is not the same rule set as `host.py`. `host.py` only strips brackets that co
 
 ## Phone Sync (optional)
 
-Optional. Copies `music_dir` to an Android phone over USB. Needs `jmtpfs` and `rsync` (for example `sudo dnf install jmtpfs rsync`). Plug the phone in, unlock it, set USB mode to **File transfer**, then right-click the extension icon and pick **Sync music to phone** (or use the small link in the popup, or run `bash scripts/sync.sh`).
+Copies `music_dir` to an Android phone over USB. Needs `jmtpfs` and `rsync` (for example `sudo dnf install jmtpfs rsync`). Plug the phone in, unlock it, set USB mode to **File transfer**, then right-click the extension icon and pick **Sync music to phone** (or use the small link in the popup, or run `bash scripts/sync.sh`).
 
 It reads `music_dir` and the `[sync]` section of your config. `mount_point` and `phone_dir` say where the phone mounts and which folder on it to fill. `delete = false` by default, so files are only added and updated and nothing on the phone is removed. Set `delete = true` in `config_local.ini` to make the phone mirror your folder exactly, removing songs that are not in `music_dir`. Scripts, `.ini` files, hidden files, temp files and `Misc` folders are never copied.
 
@@ -247,6 +248,7 @@ The extension sends one JSON message per job to the native host:
 - **Lyrics in the background.** In audio mode, `add_lyrics.py` follows the list of finished files while downloads continue. Its output goes to a log shown afterwards, so it can't mangle the progress line.
 - **Terminal closes on a clean run, stays open on any error** (yt-dlp exit code or `ERROR` line, lyrics failure, notification failure, nothing saved).
 - **yt-dlp cache wiped every 10 runs.** The counter lives in `~/.local/state/ytdl-host/run_count`.
+- **Pipe suffixes are stripped.** Titles like `Song | Genre | Channel` keep only `Song`. Only " | " with spaces around it counts, so a title with a bare `|` is left alone.
 - **Format-retry loop for singles.** On "Requested format is not available" the terminal lists formats and lets you paste one to retry with.
 
 ## Security
@@ -284,7 +286,6 @@ The extension talks to a local program, so the doors are worth spelling out:
 - Show errors inline with title and index instead of at the end of a batch.
 - Avoid filename collisions in the flat folder.
 - Share the channel regex between `popup.js`, `background.js` and `host.py` instead of duplicating it.
-- Add a screenshot or GIF of it in action.
 
 Feel free to contribute via forks and Pull Requests, or open an issue if something breaks.
 
