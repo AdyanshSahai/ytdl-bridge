@@ -70,6 +70,7 @@ CONFIG_DEFAULTS = {
     'browser': {'cookies_from': 'brave'},
     'download': {'audio_format': 'bestaudio[abr=128]/bestaudio',
                  'video_format': 'bestvideo+bestaudio/best',
+                 'concurrent_fragments': '16',
                  'batch_size': '10', 'cache_wipe_every': '10'},
     'lyrics': {'enabled': 'true'},
 }
@@ -110,6 +111,7 @@ DEFAULT_AUDIO_FMT = cfg_str('download', 'audio_format')
 DEFAULT_VIDEO_FMT = cfg_str('download', 'video_format')
 BATCH_SIZE = cfg_int('download', 'batch_size')
 CACHE_WIPE_EVERY = cfg_int('download', 'cache_wipe_every')
+CONCURRENT_FRAGMENTS = cfg_int('download', 'concurrent_fragments')
 LYRICS_ENABLED = cfg_str('lyrics', 'enabled').lower() in ('1', 'true', 'yes', 'on')
 
 DEFAULT_TOTAL = 2000  # fallback upper bound if get_playlist_count() fails
@@ -134,7 +136,6 @@ PROGRESS_TEMPLATE = 'download:    %(progress._percent_str)s  %(progress._speed_s
 
 COMMON_ARGS = [
     '--embed-metadata', '--embed-thumbnail', '--convert-thumbnails', 'jpg',
-    '--concurrent-fragments', '16',
     '--ignore-errors', '--quiet', '--no-warnings',
     '--progress', '--progress-delta', '0.3',
     '--progress-template', PROGRESS_TEMPLATE,
@@ -393,7 +394,7 @@ def build_script(url, mode, target, is_multi, limit=None, run_no=0):
     else:
         cache_wipe = ':'
 
-    args = COMMON_ARGS + cookie_args() + (AUDIO_ARGS if audio else VIDEO_ARGS)
+    args = COMMON_ARGS + ['--concurrent-fragments', str(CONCURRENT_FRAGMENTS)] + cookie_args() + (AUDIO_ARGS if audio else VIDEO_ARGS)
     if not is_multi:
         args = args + ['--no-playlist']  # forceSingle on a watch?v=..&list=.. url
 

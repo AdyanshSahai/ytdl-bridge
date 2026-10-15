@@ -21,7 +21,7 @@ g = lambda s, k: cp.get(s, k, fallback='').strip()
 print('|'.join([os.path.expanduser(g('folders', 'music_dir') or '~/Music'),
                 os.path.expanduser(g('sync', 'mount_point') or '~/phone'),
                 g('sync', 'phone_dir') or 'Internal shared storage/Music',
-                g('sync', 'delete').lower() or 'true']))
+                g('sync', 'delete').lower() or 'false']))
 PY
 )
 
