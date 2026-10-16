@@ -292,7 +292,9 @@ Feel free to contribute via forks and Pull Requests, or open an issue if somethi
 
 ## Disclaimer
 
-This software is a frontend wrapper designed to facilitate personal media workflows using [yt-dlp](https://github.com/yt-dlp/yt-dlp). It is intended strictly for personal, educational, and fair-use purposes. 
+This software is a frontend wrapper designed to facilitate personal media workflows using [yt-dlp](https://github.com/yt-dlp/yt-dlp). It is intended strictly for personal and educational purposes.
+
+This project is not affiliated with or endorsed by YouTube, Google or the yt-dlp project.
 
 The developer does not condone, support, or encourage the unauthorized downloading, distribution, or reproduction of copyrighted material. You are solely responsible for ensuring your use of this tool complies with local copyright laws and the terms of service of the host platforms.
 
