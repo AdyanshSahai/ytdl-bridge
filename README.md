@@ -12,7 +12,7 @@ One-click yt-dlp frontend for Brave/Chrome — click the extension on a YouTube 
 <sub>Sped up 2x. Demo tracks: Cartoon, Jéja – On & On (feat. Daniel Levi) and Janji – Heroes Tonight (feat. Johnning) [NCS Release]</sub>
 
 - **One click** on any YouTube or YT Music page, or `Ctrl+Shift+Y`
-- **Music comes out as tagged Opus** with clean artist and title, plus synced lyrics
+- **Music comes out as tagged Opus** with clean artist and title, plus synced lyrics when available
 - **Whole playlists and channels** download in batches, without the cookies going stale
 - **Keeps running if you close the browser.** The terminal closes itself after a clean run and stays open only if something broke
 - **One config file**, with an installer for Brave, Chrome, Chromium, Vivaldi and Edge

@@ -106,7 +106,6 @@ def process_file(path, f, title_from_filename=False):
         lrc = syncedlyrics.search(
               f"{search_title(title)} {artist}",
               providers=PROVIDERS,
-              plain_only=True,
         )
     except Exception as e:
         print(f"error on {f}: {e}")
