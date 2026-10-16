@@ -8,6 +8,7 @@ One-click yt-dlp frontend for Brave/Chrome — click the extension on a YouTube 
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ![ytdl-bridge in action](docs/demo.gif)
+
 <sub>Sped up 2x. Demo tracks: Cartoon, Jéja – On & On (feat. Daniel Levi) and Janji – Heroes Tonight (feat. Johnning) [NCS Release]</sub>
 
 - **One click** on any YouTube or YT Music page, or `Ctrl+Shift+Y`
